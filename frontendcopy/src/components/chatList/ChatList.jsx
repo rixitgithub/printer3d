@@ -2,15 +2,24 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import "./chatList.css";
+import { useAuth } from "@clerk/clerk-react"; 
 
 const ChatList = ({ isExpanded, onToggle }) => {
-  const { isLoading, error, data } = useQuery({
-    queryKey: ["userChats"],
-    queryFn: () =>
-      fetch(`${import.meta.env.VITE_API_URL}/api/userchats`, {
-        credentials: "include",
-      }).then((res) => res.json()),
-  });
+  const { getToken } = useAuth();
+  
+const { isLoading, error, data } = useQuery({
+  queryKey: ["userChats"],
+  queryFn: async () => {
+    const token = await getToken(); // Fetch Clerk token
+    return fetch(`${import.meta.env.VITE_API_URL}/api/userchats`, {
+      headers: {
+        Authorization: `Bearer ${token}`, // Include auth token
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+    }).then((res) => res.json());
+  },
+});
 
   const groupChatsByDate = (chats) => {
     const today = new Date().toDateString();

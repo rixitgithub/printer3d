@@ -22,6 +22,11 @@ app.use(
   })
 );
 
+app.use((req, res, next) => {
+  console.log("Middleware running");
+  next();
+});
+
 app.use(express.json());
 
 const connect = async () => {
@@ -100,15 +105,16 @@ app.post("/api/chats", ClerkExpressRequireAuth(), async (req, res) => {
 });
 
 app.get("/api/userchats", ClerkExpressRequireAuth(), async (req, res) => {
-  const userId = req.auth.userId;
-
   try {
-    const userChats = await UserChats.find({ userId });
+    console.log("Request authenticated:", req.auth);
+    const userId = req.auth?.userId; // Ensure userId exists
+    if (!userId) return res.status(401).json({ error: "Unauthorized!" });
 
-    res.status(200).send(userChats[0].chats);
+    const userChats = await UserChats.find({ userId });
+    res.status(200).json(userChats[0]?.chats || []);
   } catch (err) {
-    console.log(err);
-    res.status(500).send("Error fetching userchats!");
+    console.error("Error fetching user chats:", err);
+    res.status(500).json({ error: "Error fetching user chats!" });
   }
 });
 
@@ -224,11 +230,11 @@ app.use((err, req, res, next) => {
 });
 
 // PRODUCTION
-app.use(express.static(path.join(__dirname, "../client/dist")));
+// app.use(express.static(path.join(__dirname, "../client/dist")));
 
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../client/dist", "index.html"));
-});
+// app.get("*", (req, res) => {
+//   res.sendFile(path.join(__dirname, "../client/dist", "index.html"));
+// });
 
 app.listen(port, () => {
   connect();

@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@clerk/clerk-react";
 import "./newPrompt.css";
 import Upload from "../upload/Upload";
 import { IKImage } from "imagekitio-react";
-import Markdown from "react-markdown";
 import GeminiChat, { streamGeminiResponse } from "../response/GeminiChat";
 import YouTubeSearch, { searchYouTube } from "../response/YoutubeSearch";
 
@@ -12,17 +12,15 @@ const NewPrompt = ({ data }) => {
   const [query, setQuery] = useState("");
   const [geminiAnswer, setGeminiAnswer] = useState("");
   const [videoData, setVideoData] = useState(null);
-  const [img, setImg] = useState({
-    isLoading: false,
-    dbData: {},
-    aiData: {},
-  });
+  const [img, setImg] = useState({ isLoading: false, dbData: {}, aiData: {} });
   const [isGeminiComplete, setIsGeminiComplete] = useState(false);
   const [options, setOptions] = useState({ text: true, video: false });
+  const [isProcessing, setIsProcessing] = useState(false); // NEW: Tracks request state
   const endRef = useRef(null);
   const formRef = useRef(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { getToken } = useAuth(); 
 
   useEffect(() => {
     if (endRef.current) {
@@ -32,36 +30,47 @@ const NewPrompt = ({ data }) => {
 
   const mutation = useMutation({
     mutationFn: async (payload) => {
-      console.log("Sending request body to backend:", payload);
+      const token = await getToken();
+      if (!token) {
+        throw new Error("Unauthenticated!"); 
+      }
+
       const res = await fetch(
         `${import.meta.env.VITE_API_URL}/api/chats/${data._id}`,
         {
           method: "PUT",
           credentials: "include",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            Authorization: `Bearer ${token}`, 
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify(payload),
         }
       );
+
+      if (!res.ok) {
+        throw new Error(`Error: ${res.status} - ${res.statusText}`);
+      }
+
       return res.json();
     },
     onSuccess: (updatedChat) => {
-      // If the current chat id is null (or "null"), navigate to the new chat route.
       if (!data._id || data._id === "null" || data._id !== updatedChat._id) {
         navigate(`/dashboard/chats/${updatedChat._id}`);
       }
-      queryClient
-        .invalidateQueries({ queryKey: ["chat", updatedChat._id] })
-        .then(() => {
-          formRef.current.reset();
-          setQuery("");
-          setGeminiAnswer("");
-          setVideoData(null);
-          setImg({ isLoading: false, dbData: {}, aiData: {} });
-          setIsGeminiComplete(false);
-        });
+      queryClient.invalidateQueries({ queryKey: ["chat", updatedChat._id] }).then(() => {
+        formRef.current.reset();
+        setQuery("");
+        setGeminiAnswer("");
+        setVideoData(null);
+        setImg({ isLoading: false, dbData: {}, aiData: {} });
+        setIsGeminiComplete(false);
+        setIsProcessing(false); // Enable buttons again
+      });
     },
     onError: (err) => {
       console.error("Mutation Error:", err);
+      setIsProcessing(false); // Ensure buttons get re-enabled on error
     },
   });
 
@@ -69,31 +78,36 @@ const NewPrompt = ({ data }) => {
     e.preventDefault();
     const text = e.target.text.value.trim();
     if (!text) return;
+
     setQuery(text);
     setGeminiAnswer("");
     setVideoData(null);
     setIsGeminiComplete(false);
+    setIsProcessing(true); // Disable buttons and input field
 
     try {
-      const finalAnswer = await streamGeminiResponse(text, setGeminiAnswer);
-      setGeminiAnswer(finalAnswer);
-      setIsGeminiComplete(true);
+      let finalAnswer = "";
+      let video = null;
 
-      const video = await searchYouTube(text);
-      setVideoData(video);
+      if (options.text) {
+        finalAnswer = await streamGeminiResponse(text, setGeminiAnswer);
+        setIsGeminiComplete(true);
+      }
+
+      if (options.video) {
+        video = await searchYouTube(text);
+        setVideoData(video);
+      }
 
       const dataToSend = {
         question: text,
         answer: options.text ? finalAnswer : null,
         img: img.dbData?.filePath || null,
-        video:
-          options.video && video
-            ? {
-                title: video.title,
-                url: video.url,
-                thumbnail: video.thumbnail,
-              }
-            : null,
+        video: options.video && video ? {
+          title: video.title,
+          url: video.url,
+          thumbnail: video.thumbnail,
+        } : null,
       };
 
       setTimeout(() => {
@@ -101,13 +115,14 @@ const NewPrompt = ({ data }) => {
       }, 100);
     } catch (err) {
       console.error("Error processing query:", err);
+      setIsProcessing(false); // Re-enable UI if error occurs
     }
   };
 
   const toggleOption = (option) => {
+    if (isProcessing) return; // Prevent changes during processing
     setOptions((prev) => {
       const newOptions = { ...prev, [option]: !prev[option] };
-      // Ensure at least one option remains active
       if (!newOptions.text && !newOptions.video) {
         newOptions[option] = true;
       }
@@ -131,15 +146,14 @@ const NewPrompt = ({ data }) => {
       {options.text && query && (
         <GeminiChat question={query} answer={geminiAnswer} isComplete={isGeminiComplete} />
       )}
-
-{options.video && query && (options.text ? isGeminiComplete : true) && (
-  <YouTubeSearch query={query} video={videoData} />
-)}
+      {options.video && query && (options.text ? isGeminiComplete : true) && (
+        <YouTubeSearch query={query} video={videoData} />
+      )}
 
       <div className="endChat" ref={endRef}></div>
 
       <form className="newForm" onSubmit={handleSubmit} ref={formRef}>
-        <input type="text" name="text" placeholder="Ask anything..." />
+        <input type="text" name="text" placeholder="Ask anything..." disabled={isProcessing} />
         <div className="controls-container">
           <div className="left-controls">
             <div className="option-buttons">
@@ -147,6 +161,7 @@ const NewPrompt = ({ data }) => {
                 type="button"
                 className={`option-button ${options.text ? "active" : ""}`}
                 onClick={() => toggleOption("text")}
+                disabled={isProcessing}
               >
                 Text
               </button>
@@ -154,6 +169,7 @@ const NewPrompt = ({ data }) => {
                 type="button"
                 className={`option-button ${options.video ? "active" : ""}`}
                 onClick={() => toggleOption("video")}
+                disabled={isProcessing}
               >
                 Video
               </button>
@@ -162,7 +178,7 @@ const NewPrompt = ({ data }) => {
               <Upload setImg={setImg} />
             </div>
           </div>
-          <button type="submit">
+          <button type="submit" disabled={isProcessing}>
             <img src="/arrow.png" alt="Submit" />
           </button>
         </div>

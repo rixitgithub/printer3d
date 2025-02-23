@@ -15,17 +15,28 @@ const ChatPage = () => {
     queryKey: ["chat", chatId],
     queryFn: async () => {
       const token = await getToken();
-      fetch(`${import.meta.env.VITE_API_URL}/api/chats/${chatId}`, {
+      if (!token) {
+        throw new Error("Unauthenticated!"); // Handle auth error
+      }
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/chats/${chatId}`, {
         headers: {
           Authorization: `Bearer ${token}`, // Include auth token
           "Content-Type": "application/json",
         },
         credentials: "include",
-      }).then((res) => res.json());
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error: ${response.status} - ${response.statusText}`);
+      }
+
+      return response.json(); // ✅ Return the parsed JSON
     },
+    retry: false, // Prevent automatic retries on authentication errors
   });
 
-  // Scroll to bottom whenever data changes
+  // Scroll to bottom when new messages arrive
   const scrollToBottom = () => {
     const chatContainer = document.getElementById("chatContainer");
     if (chatContainer) {
@@ -33,7 +44,6 @@ const ChatPage = () => {
     }
   };
 
-  // Trigger scroll to bottom on new data load or update
   if (data) {
     scrollToBottom();
   }
@@ -45,7 +55,7 @@ const ChatPage = () => {
           {isPending ? (
             "Loading..."
           ) : error ? (
-            "Something went wrong!"
+            <div className="error">{error.message}</div>
           ) : (
             data?.history?.map((message, i) => (
               <div key={i}>
@@ -62,35 +72,27 @@ const ChatPage = () => {
                   />
                 )}
                 <div className="container">
-                {/* Display message text if available */}
-                {message.parts && message.parts[0]?.text && (
-                  <div
-                    className={
-                      message.role === "user" ? "message user" : "message"
-                    }
-                  >
-                    <Markdown>{message.parts[0].text}</Markdown>
-                  </div>
-                )}
+                  {/* Display message text if available */}
+                  {message.parts?.[0]?.text && (
+                    <div className={message.role === "user" ? "message user" : "message"}>
+                      <Markdown>{message.parts[0].text}</Markdown>
+                    </div>
+                  )}
 
-                {/* Display video if available */}
-                {message.video && (
-                  <div className="video-container">
-                    <iframe
-                      id="youtube-iframe"
-                      width="560"
-                      height="315"
-                      src={`${message.video.url.replace(
-                        "watch?v=",
-                        "embed/"
-                      )}?enablejsapi=1`}
-                      title={message.video.title}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
-                  </div>
-                )}
+                  {/* Display video if available */}
+                  {message.video && (
+                    <div className="video-container">
+                      <iframe
+                        width="560"
+                        height="315"
+                        src={`${message.video.url.replace("watch?v=", "embed/")}?enablejsapi=1`}
+                        title={message.video.title}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    </div>
+                  )}
                 </div>
               </div>
             ))

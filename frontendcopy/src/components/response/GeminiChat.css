@@ -1,0 +1,77 @@
+/* GeminiChat.css */
+.gemini-message {
+  margin: 8px 0;
+  max-width: 85%;
+  align-self: flex-start;
+  border-radius: 18px;
+  padding: 12px 18px;
+  animation: message-appear 0.01s ease-out;
+}
+
+@keyframes message-appear {
+  from {
+    opacity: 0;
+    transform: translateY(60px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.message-content {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #ffffff;
+}
+
+.message-content p {
+  margin: 0.5em 0;
+}
+
+.typing-indicator {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #6b7280;
+  margin-left: 4px;
+  vertical-align: middle;
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.chat-loading {
+  color: #6b7280;
+  font-style: italic;
+  padding: 12px 18px;
+}
+
+/* Markdown styling */
+.message-content strong {
+  font-weight: 600;
+}
+
+.message-content em {
+  font-style: italic;
+}
+
+.message-content pre {
+  padding: 12px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 8px 0;
+}
+
+.message-content code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 14px;
+}
+
+.message-content a {
+  color: white;
+  text-decoration: underline;
+}

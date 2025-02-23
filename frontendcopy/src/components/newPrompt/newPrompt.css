@@ -1,0 +1,236 @@
+.newPrompt {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.chatContent {
+  flex-grow: 1;
+  overflow-y: scroll;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  padding: 20px;
+  padding-bottom: 120px;
+}
+
+.chatContent::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.loading {
+  text-align: center;
+  padding: 10px;
+  color: #1A1A1A;
+}
+
+.message {
+  margin-bottom: 15px;
+  padding: 10px 20px;
+  border-radius: 20px 3px 20px 20px ;
+  max-width: 100%;
+}
+
+.message.user {
+  width:fit-content;
+  margin-right: 11%;
+  text-align: end;
+  background-color: #1f1f1f;
+}
+
+/* .message:not(.user) {
+  background-color: #2c2937;
+} */
+
+.endChat {
+  padding-bottom: 84px;
+}
+
+.newForm {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 75%;
+  max-width: 1000px;
+  background-color: #1A1A1A;
+  border-radius: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 20px;
+  box-sizing: border-box;
+  margin-bottom: 20px;
+  box-shadow: 0px -4px 40px rgb(37, 37, 37); /* Top shadow */
+
+}
+
+.newForm input[type="text"] {
+  flex: 1;
+  padding: 15px 0;
+  border: none;
+  outline: none;
+  background-color: #1A1A1A;
+  color: #ececec;
+  font-size: 16px;
+  width: 100%;
+}
+
+.newForm input {
+  background-color: #1A1A1A;
+}
+
+.controls-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.left-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.option-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.option-button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 8px;
+  background-color: #333;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-align: center;
+}
+
+
+.newForm button,
+.newForm label {
+  border-radius: 50%;
+  background-color: #e0e0e0;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.uploadbtn label{
+  background-color: #7a7885 ;
+}
+
+.uploadbtn label:hover{
+  background-color: #555 !important ;
+}
+
+
+.newForm button:hover,
+.newForm label:hover {
+  background-color: #7a7885;
+}
+
+.newForm button img,
+.newForm label img {
+  width: 20px;
+  height: 20px;
+}
+
+.newForm label img {
+  width: 12px;
+  height: 12px;
+}
+
+ 
+/* Add styles for the divider and text message */
+
+.divider {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  border: 1px solid #e0e0e0;
+}
+
+.video-text {
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #333;
+  margin-top: 10px;
+}
+
+.video-text p {
+  color: #555;
+  font-size: 1.1rem;
+  font-weight: normal;
+  margin-top: 5px;
+}
+
+/* Option buttons styling */
+.option-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.option-buttons button{
+  background-color: #1A1A1A;
+  height: 27px;
+  width: 70px;
+  border-radius: 50px;
+  font-size: small;
+  border: 1px solid grey;
+
+}
+
+.option-button {
+  background: #f5f5f5;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.option-button.active {
+  background: rgb(97, 0, 224);
+  color: white;
+  /* border-color: #007bff; */
+}
+
+.option-button:hover {
+  opacity: 0.9;
+  background-color: darkgrey;
+  border: white;
+  /* box-shadow:3px 3px 5px rgb(97, 0, 224); */
+}
+
+/* Tablet and Mobile Styles */
+@media (max-width: 1000px) {
+  .newForm {
+    width: 80%;
+  }
+}
+
+
+/* Tablet and Mobile Styles */
+@media (max-width: 768px) {
+  .newForm {
+    width: 100%;
+    max-width: none;
+    left: 0;
+    transform: none;
+    border-radius: 30px 30px 0px 0px;
+    padding: 20px;
+    margin-bottom: -20px;
+    width: 100vw;
+  }
+  .message{
+    max-width: 100% !important;
+  }
+}
